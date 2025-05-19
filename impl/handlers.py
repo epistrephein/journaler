@@ -43,7 +43,7 @@ class JournalUploadHandler(UploadHandler):
 
         # attributes of the class
         title = URIRef("https://schema.org/name")
-        issn = URIRef("https://schema.org/identifier")
+        issn = URIRef("https://www.wikidata.org/wiki/Property:P236")
         eissn = URIRef("https://www.wikidata.org/wiki/Q46339674")
         language = URIRef ("https://schema.org/inLanguage")
         publisher = URIRef ("https://schema.org/publisher")
