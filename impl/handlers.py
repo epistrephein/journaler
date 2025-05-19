@@ -57,7 +57,7 @@ class JournalUploadHandler(UploadHandler):
                        keep_default_na=False)
         
         graph = Graph()
-        df = df[100]
+        df = df[100] # da togliere !!!!!
 
         for idx, row in df.iterrows():
             local_id = "journal-" + str(idx)
