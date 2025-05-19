@@ -44,7 +44,7 @@ class JournalUploadHandler(UploadHandler):
         # attributes of the class
         title = URIRef("https://schema.org/name")
         issn = URIRef("https://schema.org/identifier")
-        eissn = URIRef("https://schema.org/identifier")
+        eissn = URIRef("https://www.wikidata.org/wiki/Q46339674")
         language = URIRef ("https://schema.org/inLanguage")
         publisher = URIRef ("https://schema.org/publisher")
         seal = URIRef ("https://www.wikidata.org/wiki/Q73548471")
@@ -53,7 +53,7 @@ class JournalUploadHandler(UploadHandler):
 
         base_url= "https://github.com/epistrephein/journaler/"
 
-        df = read_csv (path,
+        df = pd.read_csv (path,
                        keep_default_na=False)
         
         graph = Graph()
