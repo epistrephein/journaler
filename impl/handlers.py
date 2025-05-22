@@ -1,6 +1,9 @@
 import json
 import sqlite3
 import pandas as pd
+from rdflib import URIRef, Graph, RDF, Literal
+from rdflib.plugins.stores.sparqlstore import SPARQLUpdateStore
+from sparql_dataframe import get
 
 class Handler:
     def __init__(self):
@@ -25,6 +28,7 @@ class UploadHandler(Handler):
         pass
 
 class JournalUploadHandler(UploadHandler):
+
     def __init__(self):
         super().__init__()
 
@@ -33,18 +37,15 @@ class JournalUploadHandler(UploadHandler):
         if not self.getDbPathOrUrl():
             raise ValueError("Database path or URL is not set")
 
-        if not path.ends_with(".csv"):
-            raise ValueError("In sert csv file")
+        if not path.endswith(".csv"):
+            raise ValueError("Input file is not in csv format")
 
-
-        
         # class
         Journal = URIRef ("https://schema.org/Periodical")
 
         # attributes of the class
         title = URIRef("https://schema.org/name")
-        issn = URIRef("https://schema.org/identifier")
-        eissn = URIRef("https://schema.org/identifier")
+        identifier = URIRef("https://schema.org/identifier")####
         language = URIRef ("https://schema.org/inLanguage")
         publisher = URIRef ("https://schema.org/publisher")
         seal = URIRef ("https://www.wikidata.org/wiki/Q73548471")
@@ -52,30 +53,30 @@ class JournalUploadHandler(UploadHandler):
         apc = URIRef ("https://www.wikidata.org/wiki/Q15291071")
 
         base_url= "https://github.com/epistrephein/journaler/"
-
-        df = read_csv (path,
-                       keep_default_na=False)
-        
+        df = pd.read_csv (path, keep_default_na=False)
         graph = Graph()
-        df = df[100] # da togliere !!!!!
+        df = df.head(100) # togliere prima della consegna!
+        df["issn_eissn"] = df["Journal ISSN (print version)"] + "," + df["Journal EISSN (online version)"]
+        df.head(20)
 
         for idx, row in df.iterrows():
+
             local_id = "journal-" + str(idx)
             subj = URIRef(base_url + local_id)
+
             graph.add ((subj, RDF.type, Journal))
             graph.add ((subj, title, Literal(row["Journal title"])))
-            graph.add ((subj, issn, Literal (row["Journal ISSN (print version)"])))
-            graph.add ((subj, eissn, Literal (row["Journal EISSN (online version)"])))
+            graph.add ((subj, identifier, Literal (row["issn_eissn"]))) ####
             graph.add ((subj, language, Literal (row["Languages in which the journal accepts manuscripts"])))
             graph.add ((subj, publisher, Literal(row["Publisher"])))
-            graph.add ((subj, seal, Literal(row["Seal"])))
+            graph.add ((subj, seal, Literal(row["DOAJ Seal"])))
             graph.add ((subj, license, Literal (row["Journal license"])))
             graph.add ((subj, apc, Literal(row["APC"])))
 
         store = SPARQLUpdateStore()
-        endpoint = getDbPathOrUrl()
+        endpoint = self.getDbPathOrUrl()
         store.open((endpoint, endpoint))
-        for triple in graph.triples (None, None, None):
+        for triple in graph.triples ((None, None, None)):
             store.add(triple)
         store.close()
 
@@ -203,12 +204,55 @@ class JournalQueryHandler(QueryHandler):
         super().__init__()
 
     def getAllJournals(self):
-        # TODO: Implement this method
-        pass
+
+        endpoint = self.getDbPathOrUrl()
+
+        query = """
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+        }
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
 
     def getJournalsWithTitle(self, partialTitle):
-        # TODO: Implement this method
-        pass
+
+        endpoint = self.getDbPathOrUrl()
+
+        query = f"""
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {{
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+                FILTER(CONTAINS {partialTitle})
+        }}
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
 
     def getJournalsPublishedBy(self, partialName):
         # TODO: Implement this method
