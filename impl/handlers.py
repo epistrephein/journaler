@@ -247,7 +247,7 @@ class JournalQueryHandler(QueryHandler):
                 wiki:Q73548471 ?seal ;
                 schema:license ?licence ;
                 wiki:Q15291071 ?apc .
-                FILTER(CONTAINS {partialTitle})
+                FILTER(CONTAINS(LCASE(STR(?title)), LCASE("{partialTitle}")))
         }}
         """
 
@@ -255,20 +255,107 @@ class JournalQueryHandler(QueryHandler):
         return df_sparql
 
     def getJournalsPublishedBy(self, partialName):
-        # TODO: Implement this method
-        pass
+        endpoint = self.getDbPathOrUrl()
+
+        query = f"""
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {{
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+                FILTER(CONTAINS(LCASE(STR(?publisher)), LCASE("{partialName}")))
+        }}
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
 
     def getJournalsWithLicense(self, licenses):
-        # TODO: Implement this method
-        pass
+        endpoint = self.getDbPathOrUrl()
+
+        # da provare: creare il set delle licenze possibile dal df e includerlo in una variabile VALUES
+
+        query = f"""
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {{
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+                FILTER(CONTAINS(?licence, "{licenses}"))
+        }}
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
+
 
     def getJournalsWithAPC(self):
-        # TODO: Implement this method
-        pass
+        endpoint = self.getDbPathOrUrl()
+
+        query = f"""
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {{
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+                FILTER(STR(?apc) = "Yes")
+        }}
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
 
     def getJournalsWithDOAJSeal(self):
-        # TODO: Implement this method
-        pass
+        endpoint = self.getDbPathOrUrl()
+
+        query = f"""
+        PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX wiki: <https://www.wikidata.org/wiki/>
+
+        SELECT ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
+        WHERE {{
+        ?journal rdf:type schema:Periodical ;
+                schema:name ?title ;
+                schema:identifier ?identifier ;
+                schema:inLanguage ?languages ;
+                schema:publisher ?publisher ;
+                wiki:Q73548471 ?seal ;
+                schema:license ?licence ;
+                wiki:Q15291071 ?apc .
+                FILTER(STR(?seal) = "Yes")
+        }}
+        """
+
+        df_sparql = get(endpoint, query, True)
+        return df_sparql
 
 class CategoryQueryHandler(QueryHandler):
     def __init__(self):
