@@ -282,7 +282,13 @@ class JournalQueryHandler(QueryHandler):
     def getJournalsWithLicense(self, licenses):
         endpoint = self.getDbPathOrUrl()
 
-        # da provare: creare il set delle licenze possibile dal df e includerlo in una variabile VALUES
+        # Converting set in list
+
+        licences_list = [l for l in licenses]
+
+        # Converting list in string
+
+        licenses_string = " ".join(licences_list)
 
         query = f"""
         PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -299,7 +305,7 @@ class JournalQueryHandler(QueryHandler):
                 wiki:Q73548471 ?seal ;
                 schema:license ?licence ;
                 wiki:Q15291071 ?apc .
-                FILTER(CONTAINS(?licence, "{licenses}"))
+                FILTER(CONTAINS(?licence, "{licenses_string}"))
         }}
         """
 
