@@ -146,7 +146,7 @@ class CategoryUploadHandler(UploadHandler):
 
         df_journal_areas = pd.DataFrame(journal_areas).drop_duplicates()
 
-        df_area_categories = pd.DataFrame(areas_categories).drop_duplicates()
+        df_areas_categories = pd.DataFrame(areas_categories).drop_duplicates()
 
         # Save to SQLite
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
@@ -155,7 +155,7 @@ class CategoryUploadHandler(UploadHandler):
             df_areas.to_sql("areas", con, index=False, if_exists="replace")
             df_journal_categories.to_sql("journal_categories", con, index=False, if_exists="replace")
             df_journal_areas.to_sql("journal_areas", con, index=False, if_exists="replace")
-            df_area_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
+            df_areas_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
 
         return True
 
