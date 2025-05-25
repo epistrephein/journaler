@@ -47,89 +47,115 @@ class CategoryUploadHandler(UploadHandler):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # Initialize variables
-        journals = [] # [(1, 'xxx', 'xxx')]
+        # Initialize empty dictionary that we will populate before using as an input in the dataframe step (final)
         journals = {"id": [], "identifier_1": [], "identifier_2": []}
-
-        categories = set()
-        areas = set()
-
+        categories = {"id": [], "name": [], "quartile": []}
+        areas = {"id": [], "name":[]}
         journal_categories = {"journal_id": [], "category_id": []}
-        journal_areas = []
-        areas_categories = []
+        journal_areas = {"journal_id" : [], "areas_id":[]}
+        areas_categories = {"areas_id": [], "category_id": []}
 
+        #normalize data for journal dataframe
         for index, entry in enumerate(data):
-            journal_id = index + 1
-            identifiers = entry.get("identifiers", [])
+            journal_id = index + 1 
+            identifiers = entry.get("identifiers", []) 
+        #populate the dictionary previously set as empty 
             journals["id"].append(journal_id)
             journals["identifier_1"].append(identifiers[0] if len(identifiers) > 0 else None)
             journals["identifier_2"].append(identifiers[1] if len(identifiers) > 1 else None)
 
-            entry_categories = []
-            for cat in entry.get("categories", []):
-                cat_tuple = (cat.get("id"), cat.get("quartile"))
-                entry_categories.append(cat_tuple)
+        #normalize categories 
+        double_cat_check = set()                   #categories are not univoque for each journal so we don't need them more than once
+        cat_counter = 1
+        for index, entry in enumerate(data):
+            get_categories = entry.get("categories", []) #obtain the categories (dictionary in itself)
+            for cat in get_categories:                   #for each category in the get_category we must associate 
+                cat_name = cat.get("id")                 #the name to the cat_name variable
+                quartile = cat.get("quartile")           #the quartile to the quartile variable 
 
-            for cat in entry_categories:
-                categories.add(cat)
-                journal_categories.append((journal_id, cat))
+                if cat_name not in double_cat_check:     
+                    double_cat_check.add(cat_name)
 
-            entry_areas = []
-            entry_areas.extend(entry.get("areas", []))
+        #populate the empty dictionary for dataframe
+                    categories["id"].append(cat_counter)
+                    categories["name"].append(cat_name)
+                    categories["quartile"].append(quartile)
+                    cat_counter +=1 
+        
+        #normalize areas 
+        double_area_check = set()
+        area_counter = 1
+        for index, entry in enumerate(data):
+            get_areas = entry.get("areas", [])
+            for area in get_areas:
+                if area not in double_area_check:
+                    double_area_check.add(area)
+                    areas["id"].append(area_counter)
+                    areas["name"].append(area)
+                    area_counter += 1
 
-            for area in entry_areas:
-                areas.add(area)
-                journal_areas.append((journal_id, area))
+        #normalize for journal+categories
+        #create a dictionary on the fly that map category name to their corrisponding id 
+        category_name_to_id = {name: id for id, name in zip(categories["id"], categories["name"])}
+        for index, entry in enumerate(data):
+            journal_id = index + 1
+            get_categories = entry.get("categories", [])
+            for cat in get_categories:
+                cat_name = cat.get("id")
+                cat_id = category_name_to_id.get(cat_name)
 
-            for area in entry_areas:
-                for cat in entry_categories:
-                    areas_categories.append((area, cat))
+                if cat_id:  
+                    journal_categories["journal_id"].append(journal_id)
+                    journal_categories["category_id"].append(cat_id)
+        
+        #normalize journal+area
+        #create a dictionary on the fly to map areas to their corrisponding id
+        area_name_to_id ={name: id for id, name in zip(areas["id"], areas["name"])} 
+        for index, entry in enumerate(data):
+            journal_id = index + 1
+            get_areas = entry.get("areas", [])
+            for area in get_areas:
+                area_id = area_name_to_id.get(area)
+                if area_id:  
+                    journal_areas["journal_id"].append(journal_id)
+                    journal_areas["areas_id"].append(area_id)
 
-        category_id_map = {}
-        for i, v in enumerate(categories):
-            category_id_map[v] = i+1
+        #normalize categories+ area
+        # Normalize areas + categories relationship
+        for index, entry in enumerate(data):
+            get_areas = entry.get("areas", [])
+            get_categories = entry.get("categories", [])
+            for area in get_areas:
+                area_id = area_name_to_id.get(area)
+                for cat in get_categories:
+                    cat_name = cat.get("id")
+                    cat_id = category_name_to_id.get(cat_name)
+                    if area_id and cat_id:
+                        areas_categories["areas_id"].append(area_id)
+                        areas_categories["category_id"].append(cat_id)
 
-        area_id_map = {}
-        for i, v in enumerate(areas):
-            area_id_map[v] = i+1
 
-        # DataFrames
+        # DataFrames step (takes input already normalized data)
         df_journals = pd.DataFrame(journals)
 
-        df_categories = pd.DataFrame([
-            {"id": cid, "name": name, "quartile": quartile}
-            for (name, quartile), cid in category_id_map.items()
-        ])
+        df_categories = pd.DataFrame(categories)
 
-        df_areas = pd.DataFrame([
-            {"id": aid, "name": name}
-            for name, aid in area_id_map.items()
-        ])
+        df_areas = pd.DataFrame(areas)
 
-        df_journal_categories = pd.DataFrame([
-            {"journal_id": jid, "category_id": category_id_map[c]}
-            for jid, c in journal_categories
-        ]).drop_duplicates()
+        df_journals_categories = pd.DataFrame(journal_categories).drop_duplicates()
 
-        df_journal_areas = pd.DataFrame([
-            {"journal_id": jid, "area_id": area_id_map[a]}
-            for jid, a in journal_areas
-        ]).drop_duplicates()
+        df_journals_areas = pd.DataFrame(journal_areas).drop_duplicates()
 
-        df_areas_categories = pd.DataFrame([
-            {"area_id": area_id_map[a], "category_id": category_id_map[c]}
-            for a, c in areas_categories
-        ]).drop_duplicates()
+        df_area_categories = pd.DataFrame(areas_categories).drop_duplicates()
 
         # Save to SQLite
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
             df_journals.to_sql("journals", con, index=False, if_exists="replace")
             df_categories.to_sql("categories", con, index=False, if_exists="replace")
             df_areas.to_sql("areas", con, index=False, if_exists="replace")
-            df_journal_categories.to_sql("journal_categories", con, index=False, if_exists="replace")
-            df_journal_areas.to_sql("journal_areas", con, index=False, if_exists="replace")
-            df_areas_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
-
+            df_journals_categories.to_sql("journals_categories", con, index=False, if_exists="replace")
+            df_journals_areas.to_sql("journals_areas", con, index=False, if_exists="replace")
+            df_area_categories.to_sql("areas_categories", con, index= False, if_exists="replace" )
         return True
 
 class QueryHandler(Handler):
