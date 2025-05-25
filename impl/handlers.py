@@ -65,7 +65,7 @@ class CategoryUploadHandler(UploadHandler):
             journals["identifier_2"].append(identifiers[1] if len(identifiers) > 1 else None)
 
         #normalize categories 
-        double_cat_check = set()                   #categories are not univoque for each journal so we don't need them more than once
+        double_cat_quart_check = set()                   #categories are not univoque for each journal so we don't need them more than once
         cat_counter = 1
         for index, entry in enumerate(data):
             get_categories = entry.get("categories", []) #obtain the categories (dictionary in itself)
@@ -73,8 +73,8 @@ class CategoryUploadHandler(UploadHandler):
                 cat_name = cat.get("id")                 #the name to the cat_name variable
                 quartile = cat.get("quartile")           #the quartile to the quartile variable 
 
-                if cat_name not in double_cat_check:     
-                    double_cat_check.add(cat_name)
+                if (cat_name, quartile) not in double_cat_quart_check:
+                    double_cat_quart_check.add((cat_name, quartile))
 
         #populate the empty dictionary for dataframe
                     categories["id"].append(cat_counter)
@@ -150,12 +150,19 @@ class CategoryUploadHandler(UploadHandler):
 
         # Save to SQLite
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
+            cursor = con.cursor()
+            # Drop old tables 
+            cursor.execute("DROP TABLE IF EXISTS journal_areas")
+            cursor.execute("DROP TABLE IF EXISTS journal_categories")
+
+            # Save to SQLite
             df_journals.to_sql("journals", con, index=False, if_exists="replace")
             df_categories.to_sql("categories", con, index=False, if_exists="replace")
             df_areas.to_sql("areas", con, index=False, if_exists="replace")
             df_journals_categories.to_sql("journals_categories", con, index=False, if_exists="replace")
             df_journals_areas.to_sql("journals_areas", con, index=False, if_exists="replace")
-            df_area_categories.to_sql("areas_categories", con, index= False, if_exists="replace" )
+            df_area_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
+
         return True
 
 class QueryHandler(Handler):
