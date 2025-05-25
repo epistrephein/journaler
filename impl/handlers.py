@@ -142,25 +142,19 @@ class CategoryUploadHandler(UploadHandler):
 
         df_areas = pd.DataFrame(areas)
 
-        df_journals_categories = pd.DataFrame(journal_categories).drop_duplicates()
+        df_journal_categories = pd.DataFrame(journal_categories).drop_duplicates()
 
-        df_journals_areas = pd.DataFrame(journal_areas).drop_duplicates()
+        df_journal_areas = pd.DataFrame(journal_areas).drop_duplicates()
 
         df_area_categories = pd.DataFrame(areas_categories).drop_duplicates()
 
         # Save to SQLite
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
-            cursor = con.cursor()
-            # Drop old tables 
-            cursor.execute("DROP TABLE IF EXISTS journal_areas")
-            cursor.execute("DROP TABLE IF EXISTS journal_categories")
-
-            # Save to SQLite
             df_journals.to_sql("journals", con, index=False, if_exists="replace")
             df_categories.to_sql("categories", con, index=False, if_exists="replace")
             df_areas.to_sql("areas", con, index=False, if_exists="replace")
-            df_journals_categories.to_sql("journals_categories", con, index=False, if_exists="replace")
-            df_journals_areas.to_sql("journals_areas", con, index=False, if_exists="replace")
+            df_journal_categories.to_sql("journal_categories", con, index=False, if_exists="replace")
+            df_journal_areas.to_sql("journal_areas", con, index=False, if_exists="replace")
             df_area_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
 
         return True
