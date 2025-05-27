@@ -34,7 +34,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
@@ -45,7 +45,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
@@ -57,7 +57,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
@@ -68,7 +68,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
@@ -79,7 +79,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
@@ -90,17 +90,21 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = buildJournal(row)
-            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
+            journal = self.buildJournal(row)
             journals.append(journal)
 
         return journals
     
     def buildJournal(row):
-        ids = row["identifier"].split(",")
-        languages = row["languages"].split(", ")
+        ids = [item for item in row["identifier"].split(",") if item] 
+        title = row["title"]
+        languages = [item for item in row["languages"].split(", ") if item] 
+        publisher = row["publisher"]
+        seal = row["seal"]
+        licence = row["licence"]
+        apc = row["apc"]
         
-        return Journal(ids, languages)
+        return Journal(ids, title, languages, publisher, seal, licence, apc)
         
 
     def getAllCategories(self):
