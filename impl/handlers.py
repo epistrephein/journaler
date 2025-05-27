@@ -97,8 +97,8 @@ class CategoryUploadHandler(UploadHandler):
         categories = set()
         areas = set()
 
-        journal_categories = []
-        journal_areas = []
+        journals_categories = []
+        journals_areas = []
         areas_categories = []
 
         # Normalize data
@@ -121,11 +121,11 @@ class CategoryUploadHandler(UploadHandler):
             # Collect sets
             for cat in entry_categories:
                 categories.add(cat)
-                journal_categories.append((journal_id, cat))
+                journals_categories.append((journal_id, cat))
 
             for area in entry_areas:
                 areas.add(area)
-                journal_areas.append((journal_id, area))
+                journals_areas.append((journal_id, area))
 
             # Area-category associations
             for area in entry_areas:
@@ -152,14 +152,14 @@ class CategoryUploadHandler(UploadHandler):
             for name, aid in area_id_map.items()
         ])
 
-        df_journal_categories = pd.DataFrame([
+        df_journals_categories = pd.DataFrame([
             {"journal_id": jid, "category_id": category_id_map[c]}
-            for jid, c in journal_categories
+            for jid, c in journals_categories
         ]).drop_duplicates()
 
-        df_journal_areas = pd.DataFrame([
+        df_journals_areas = pd.DataFrame([
             {"journal_id": jid, "area_id": area_id_map[a]}
-            for jid, a in journal_areas
+            for jid, a in journals_areas
         ]).drop_duplicates()
 
         df_areas_categories = pd.DataFrame([
@@ -172,8 +172,8 @@ class CategoryUploadHandler(UploadHandler):
             df_journals.to_sql("journals", con, index=False, if_exists="replace")
             df_categories.to_sql("categories", con, index=False, if_exists="replace")
             df_areas.to_sql("areas", con, index=False, if_exists="replace")
-            df_journal_categories.to_sql("journal_categories", con, index=False, if_exists="replace")
-            df_journal_areas.to_sql("journal_areas", con, index=False, if_exists="replace")
+            df_journals_categories.to_sql("journals_categories", con, index=False, if_exists="replace")
+            df_journals_areas.to_sql("journals_areas", con, index=False, if_exists="replace")
             df_areas_categories.to_sql("areas_categories", con, index=False, if_exists="replace")
 
         return True
@@ -183,28 +183,8 @@ class QueryHandler(Handler):
         super().__init__()
 
     def getById(self, id):
-        with sqlite3.connect(self.getDbPathOrUrl()) as con:
-            # Check if the area exists
-            area_query = f"SELECT * FROM areas WHERE name = '{id}'"
-            area_df = pd.read_sql(area_query, con)
-            if not area_df.empty:
-                return area_df.drop(columns=["id"])
-
-            # Check if the category exists
-            category_query = f"SELECT * FROM categories WHERE name = '{id}'"
-            category_df = pd.read_sql(category_query, con)
-            if not category_df.empty:
-                return category_df.drop(columns=["id"])
-
-            # Check if the journal exists
-            journal_query = f"SELECT * FROM journals WHERE identifier_1 = '{id}' OR identifier_2 = '{id}'"
-            journal_df = pd.read_sql(journal_query, con)
-            if not journal_df.empty:
-                return journal_df.drop(columns=["id"])
-
-            # TODO: add queries for blazegraph
-
-        return pd.DataFrame()
+        # Implemented in subclasses
+        pass
 
 class JournalQueryHandler(QueryHandler):
     BASE_QUERY = """
@@ -295,15 +275,39 @@ class CategoryQueryHandler(QueryHandler):
     def __init__(self):
         super().__init__()
 
+    def getById(self, id):
+        with sqlite3.connect(self.getDbPathOrUrl()) as con:
+            # Check if the area exists
+            area_query = f"SELECT * FROM areas WHERE name = '{id}' LIMIT 1"
+            area_df = pd.read_sql(area_query, con)
+            if not area_df.empty:
+                return area_df.assign(model="area")
+
+            # Check if the category exists
+            category_query = f"SELECT * FROM categories WHERE name = '{id}' LIMIT 1"
+            category_df = pd.read_sql(category_query, con)
+            if not category_df.empty:
+                return category_df.assign(model="category")
+
+            # Check if the journal exists
+            journal_query = f"SELECT * FROM journals WHERE identifier_1 = '{id}' OR identifier_2 = '{id}' LIMIT 1"
+            journal_df = pd.read_sql(journal_query, con)
+            if not journal_df.empty:
+                return journal_df.assign(model="journal")
+
+        return pd.DataFrame()
+
     def getAllCategories(self):
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
-            df = pd.read_sql("SELECT * FROM categories", con)
+            query = "SELECT * FROM categories"
+            df = pd.read_sql(query, con)
 
         return df.drop(columns=["id"])
 
     def getAllAreas(self):
         with sqlite3.connect(self.getDbPathOrUrl()) as con:
-            df = pd.read_sql("SELECT * FROM areas", con)
+            query = "SELECT * FROM areas"
+            df = pd.read_sql(query, con)
 
         return df.drop(columns=["id"])
 
