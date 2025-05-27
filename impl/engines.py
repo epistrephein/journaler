@@ -29,8 +29,16 @@ class BasicQueryEngine:
         pass
 
     def getAllJournals(self):
-        # TODO: Implement this class
-        pass
+        
+        all_dfs = [query.getAllJournals() for query in self.journalQuery]
+        merged_df = pd.concat(all_dfs).drop_duplicates().reset_index(drop=True) if all_dfs else pd.DataFrame()
+
+        journals = []
+        for index, row in merged_df.iterrows():
+            journal = Journal(row["Journal tilte"], row["issn and eissn"], row["Languages in which the journal accepts manuscripts"], row["Publisher"], row["DOAJ Seal"], row["Journal license"], row["APC"])
+            journals.append(journal)
+
+        return journals
 
     def getJournalsWithTitle(self, partialTitle):
         # TODO: Implement this class

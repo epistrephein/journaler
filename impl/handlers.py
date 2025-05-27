@@ -53,7 +53,7 @@ class JournalUploadHandler(UploadHandler):
         graph = Graph()
 
         df = pd.read_csv(path, keep_default_na=False)
-        df["issn_eissn"] = df["Journal ISSN (print version)"] + "," + df["Journal EISSN (online version)"]
+        df["issn and eissn"] = df["Journal ISSN (print version)"] + "," + df["Journal EISSN (online version)"]
 
         for idx, row in df.iterrows():
             local_id = "journal-" + str(idx)
@@ -61,7 +61,7 @@ class JournalUploadHandler(UploadHandler):
 
             graph.add((subj, RDF.type, Journal))
             graph.add((subj, title, Literal(row["Journal title"])))
-            graph.add((subj, identifier, Literal (row["issn_eissn"])))
+            graph.add((subj, identifier, Literal (row["issn and eissn"])))
             graph.add((subj, language, Literal (row["Languages in which the journal accepts manuscripts"])))
             graph.add((subj, publisher, Literal(row["Publisher"])))
             graph.add((subj, seal, Literal(row["DOAJ Seal"])))
