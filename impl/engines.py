@@ -90,10 +90,18 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
+            journal = buildJournal(row)
             journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
             journals.append(journal)
 
         return journals
+    
+    def buildJournal(row):
+        ids = row["identifier"].split(",")
+        languages = row["languages"].split(", ")
+        
+        return Journal(ids, languages)
+        
 
     def getAllCategories(self):
         all_dfs = [query.getAllCategories() for query in self.categoryQuery]
