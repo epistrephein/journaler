@@ -35,7 +35,7 @@ class BasicQueryEngine:
 
         journals = []
         for index, row in merged_df.iterrows():
-            journal = Journal(row["Journal tilte"], row["issn and eissn"], row["Languages in which the journal accepts manuscripts"], row["Publisher"], row["DOAJ Seal"], row["Journal license"], row["APC"])
+            journal = Journal(row["identifier"], row["title"], row["languages"], row["publisher"], row["seal"], row["licence"], row["apc"])
             journals.append(journal)
 
         return journals
