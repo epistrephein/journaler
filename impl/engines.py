@@ -49,7 +49,6 @@ class BasicQueryEngine:
             journals.append(journal)
 
         return journals
-        
 
     def getJournalsPublishedBy(self, partialName):
         all_dfs = [query.getJournalsPublishedBy(partialName) for query in self.journalQuery]
@@ -94,18 +93,6 @@ class BasicQueryEngine:
             journals.append(journal)
 
         return journals
-    
-    def buildJournal(row):
-        ids = [item for item in row["identifier"].split(",") if item] 
-        title = row["title"]
-        languages = [item for item in row["languages"].split(", ") if item] 
-        publisher = row["publisher"]
-        seal = row["seal"]
-        licence = row["licence"]
-        apc = row["apc"]
-        
-        return Journal(ids, title, languages, publisher, seal, licence, apc)
-        
 
     def getAllCategories(self):
         all_dfs = [query.getAllCategories() for query in self.categoryQuery]
@@ -161,6 +148,17 @@ class BasicQueryEngine:
             areas.append(area)
 
         return areas
+
+    def buildJournal(self, row):
+        ids = [item for item in row["identifier"].split(",") if item]
+        title = row["title"]
+        languages = [item for item in row["languages"].split(", ") if item]
+        publisher = row["publisher"]
+        seal = row["seal"] == "Yes"
+        licence = row["licence"]
+        apc = row["apc"] == "Yes"
+
+        return Journal(ids, title, languages, publisher, seal, licence, apc)
 
 class FullQueryEngine(BasicQueryEngine):
     def getJournalsInCategoriesWithQuartile(self, category_ids, quartiles):
