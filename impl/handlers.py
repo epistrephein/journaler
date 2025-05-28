@@ -211,7 +211,7 @@ class JournalQueryHandler(QueryHandler):
     
 
     def getById(self, id):
-        filter = f'CONTAINS(CONCAT(",", STR(?identifier), ","), ",{id},")'
+        filter = f'FILTER(CONTAINS(CONCAT(",", STR(?identifier), ","), ",{id},"))'
         query = self.BASE_QUERY.format(filter=filter)
 
         endpoint = self.getDbPathOrUrl()
