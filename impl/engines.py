@@ -106,7 +106,44 @@ class BasicQueryEngine:
             areas.append(area)
 
         return areas
+    
+    def getJournalsCategories(self, journal_id):
+        all_dfs = [query.getJournalsCategories(journal_id) for query in self.categoryQuery]
+        merged_df = pd.concat(all_dfs).drop_duplicates().reset_index(drop=True) if all_dfs else pd.DataFrame()  
 
+        categories = []
+        for index, row in merged_df.iterrows():
+            category = Category(row["name"], row["quartile"])
+            categories.append(category)
+        
+        return categories 
+
+    def getJournalsAreas(self, journal_id):
+        all_dfs = [query.getJournalsAreas(journal_id) for query in self.categoryQuery]
+        merged_df = pd.concat(all_dfs).drop_duplicates().reset_index(drop=True) if all_dfs else pd.DataFrame()  
+
+        areas = []
+        for index, row in merged_df.iterrows():
+                area = Area(row["name"])
+                areas.append(area)
+        
+        return areas
+    
+    def buildJournal(self, row):
+        ids = [item for item in row["identifier"].split(",") if item]
+        title = row["title"]
+        languages = [item for item in row["languages"].split(", ") if item]
+        publisher = row["publisher"]
+        seal = row["seal"] == "Yes"
+        licence = row["licence"]
+        apc = row["apc"] == "Yes"
+
+        journal_id = ids[0]
+        categories = self.getJournalsCategories(journal_id)
+        areas = self.getJournalsAreas(journal_id)
+
+        return Journal(ids, title, languages, publisher, seal, licence, apc, categories, areas)
+    
 class FullQueryEngine(BasicQueryEngine):
     def getJournalsInCategoriesWithQuartile(self, category_ids, quartiles):
         # TODO: Implement this class

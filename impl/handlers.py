@@ -251,3 +251,27 @@ class CategoryQueryHandler(QueryHandler):
             df = pd.read_sql(query, con)
 
         return df
+
+    def getJournalsCategories(self, journal_id):
+        query = f"""
+            SELECT categories.name, categories.quartile
+            FROM categories 
+            JOIN journal_categories ON categories.id = journal_categories.category_id
+            JOIN journals ON journal_categories.journal_id = journals.id
+            WHERE journals.identifier_1 = '{journal_id}' OR journals.identifier_2 = '{journal_id}'
+        """
+        with sqlite3.connect(self.getDbPathOrUrl()) as con:
+            df = pd.read_sql(query, con)
+        return df
+
+    def getJournalsAreas(self, journal_id): 
+        query = f"""
+            SELECT areas.name
+            FROM areas 
+            JOIN journal_areas ON areas.id = journal_areas.areas_id
+            JOIN journals ON journal_areas.journal_id = journals.id
+            WHERE journals.identifier_1 = '{journal_id}' OR journals.identifier_2 = '{journal_id}'
+        """
+        with sqlite3.connect(self.getDbPathOrUrl()) as con:
+            df = pd.read_sql(query, con)
+        return df
