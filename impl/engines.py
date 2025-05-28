@@ -124,8 +124,8 @@ class BasicQueryEngine:
 
         areas = []
         for index, row in merged_df.iterrows():
-                area = Area(row["name"])
-                areas.append(area)
+            area = Area(row["name"])
+            areas.append(area)
         
         return areas
     
