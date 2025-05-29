@@ -282,6 +282,18 @@ class JournalQueryHandler(QueryHandler):
         df = get(endpoint, query, True)
 
         return df
+    
+    def filterJournalsByIds(self, df, ids):
+        merged_df = pd.DataFrame()
+        for couple in ids:
+            for id in couple:
+                new_df = df[df["identifier"].str.contains(id, na=False)]
+                merged_df = pd.concat([merged_df, new_df]).drop_duplicates().reset_index(drop=True)
+                if not new_df.empty:
+                    break
+        return merged_df
+
+
 
 class CategoryQueryHandler(QueryHandler):
     def __init__(self):
