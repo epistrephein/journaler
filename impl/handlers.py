@@ -211,6 +211,9 @@ class JournalQueryHandler(QueryHandler):
     
 
     def getById(self, id):
+        if not id:
+            return pd.DataFrame()
+        
         filter = f'FILTER(CONTAINS(CONCAT(",", STR(?identifier), ","), ",{id},"))'
         query = self.BASE_QUERY.format(filter=filter)
 
